@@ -1,4 +1,4 @@
-class Matrix:
+class Matrix: #checking git
       def __init__(self, value):
             self.value = value
             self.rows = self.get_rows(value)
