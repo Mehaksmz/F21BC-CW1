@@ -43,11 +43,9 @@ class ANN:
       def init(self, num_of_layers, nodes, functions):
         # check validity and throw error if needed
         # check at least 2 layers (including input)
-        # check legth of nodes and functions match num of layers
+        # check length of nodes and functions match num of layers
         # check functions are valid strings
-        self.check_validity(num_of_layers, nodes, functions)
         self.nodes = nodes
-        self.functions =  [get_fun(name) for name in functions]
         self.num_of_layers = num_of_layers 
 
         #create w based on nodes
@@ -75,3 +73,7 @@ class ANN:
                     return numnum + 1
                 return b
         # return error otherwise
+
+        self.functions =  [get_fun(name) for name in functions]
+        self.check_validity(num_of_layers, nodes, functions)
+
