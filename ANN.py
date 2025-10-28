@@ -1,5 +1,7 @@
 class Matrix: #checking git
       def __init__(self, value):
+            if not value: #gpt
+                raise ValueError("Matrix cannot be empty") #gpt
             self.value = value
             self.rows = self.get_rows(value)
             self.columns = self.get_cols(value)
@@ -40,7 +42,7 @@ class Matrix: #checking git
     
 #Ann architecture    
 class ANN:
-      def init(self, num_of_layers, nodes, functions):
+      def __init__(self, num_of_layers, nodes, functions):
         # check validity and throw error if needed
         # check at least 2 layers (including input)
         # check length of nodes and functions match num of layers
