@@ -1,58 +1,29 @@
-class Matrix: #checking git
-      def __init__(self, value):
-            self.value = value
-            self.rows = self.get_rows(value)
-            self.columns = self.get_cols(value)
-      def __mul__(self, other):
-        if self.columns != other.rows:
-         raise ValueError("Incompatible matrix dimensions for multiplication")
-          
-        results = []
-        for i in range(self.rows):
-            results_row = []
-            for j in range(other.columns):
-                sum = 0
-                for k in range(self.columns):
-                    sum += self.value[i][k] * other.value[k][j]
-                results_row.append(sum)
-            results.append(results_row)
-        return Matrix(results)
-          
-      def __add__(self, other):
-          if self.columns != other.columns or self.rows != other.rows:
-            raise ValueError("Incompatible matrix dimensions for addition")
-          
-          results = []
-          for i in range(self.rows):
-                results_row = []
-                for j in range(self.columns):
-                    results_row.append(self.value[i][j] + other.value[i][j])
-                results.append(results_row)
-          return Matrix(results)
-        
-      def get_rows(self, value):
-        return len(value)
-      
-      def get_cols(self, value):
-        return len(value[0]) if value else 0
-          
-       
-    
-#Ann architecture    
-class ANN:
-      def init(self, num_of_layers, nodes, functions):
-        # check validity and throw error if needed
-        # check at least 2 layers (including input)
-        # check legth of nodes and functions match num of layers
-        # check functions are valid strings
-        self.check_validity(num_of_layers, nodes, functions)
-        self.nodes = nodes
-        self.functions =  [get_fun(name) for name in functions]
-        self.num_of_layers = num_of_layers 
+import numpy as np
 
-        #create w based on nodes
-        self.ws = _get_random_w(nodes)
-        self.bs = _get_random_b(nodes)
+def sigmoid(x): return 1 / (1 + np.exp(-x))
+def relu(x): return np.maximum(0, x)
+def tanh(x): return np.tanh(x)
+
+def get_fun(name):
+    funcs = {'sigmoid': sigmoid, 'relu': relu, 'tanh': tanh}
+    try:
+        return funcs[name]
+    except KeyError:
+        raise ValueError(f"Unknown activation '{name}'. Valid: {list(funcs.keys())}")
+
+def get_random_ws(nodes):
+    return [np.random.uniform(-1, 1, (nodes[i], nodes[i + 1])) for i in range(len(nodes) - 1)]
+
+def get_random_bs(nodes):
+    return [np.zeros((1, nodes[i+1])) for i in range(len(nodes)-1)]
+
+class ANN:
+    def __init__(self, num_layers, nodes, functions):
+        self.check_validity(num_layers, nodes, functions)
+        self.num_layers, self.nodes = num_layers, nodes
+        self.ws, self.bs = get_random_ws(nodes), get_random_bs(nodes)
+        self.functions = [get_fun(f) for f in functions]
+        self.check_validity(num_layers, nodes, functions)
 
     def feedforward(self, start):
         if len(start) != self.nodes[0]:
@@ -62,18 +33,37 @@ class ANN:
             cur = self.get_next(cur, i)
         return cur
 
-        def get_next(self, x, i):
-            w = self.ws[i - 1]
-            b = self.bs[i - 1]
-            return f(w * x  + b)
+    def get_next(self, x, i):
+        w, b, f = self.ws[i-1], self.bs[i-1], self.functions[i-1]
+        return f(np.dot(x, w) + b)
+    
+    def set_weights_bias(self, flat_params):
+        idx = 0
+        for i in range(len(self.ws)):
+            ws_shape = self.ws[i].shape
+            bs_shape = self.bs[i].shape
 
-        def get_fun(name):
-            if name == 'a':
-                def a(num):
-                    return numnum
-                return a 
-            if name == 'b':
-                def a(num):
-                    return numnum + 1
-                return b
-        # return error otherwise
+            self.ws[i] = flat_params[idx:idx + np.prod(ws_shape)].reshape(ws_shape)
+            idx += np.prod(ws_shape)
+    
+            self.bs[i] = flat_params[idx:idx + np.prod(bs_shape)].reshape(bs_shape)
+            idx += np.prod(bs_shape)
+
+        if idx < len(flat_params):
+            func_codes = flat_params[idx:]
+            self.functions = [
+                get_fun(['sigmoid', 'relu', 'tanh'][int(np.clip(round(c), 0, 2))])
+                for c in func_codes
+                ]
+
+    def check_validity(self, num_layers, nodes, functions):
+        if num_layers < 2:
+            raise ValueError("At least 2 layers needed")
+        if len(nodes) != num_layers:
+            raise ValueError("Nodes list must match number of layers")
+        if len(functions) != num_layers - 1:
+            raise ValueError("Functions list must be one less than layers")
+
+ann = ANN(3, [2, 4, 1], ['relu', 'sigmoid'])
+output = ann.feedforward([0.5, -0.2])
+print(output)
