@@ -1,38 +1,8 @@
-import math, random
+import numpy as np
 
-def rand(): return random.uniform(-1, 1)
-
-class Matrix:
-    def __init__(self, rows, cols, randomize=True):
-        if rows <= 0 or cols <= 0:
-            raise ValueError("Matrix cannot be empty")
-        self.rows, self.columns = rows, cols
-        self.value = [[rand() if randomize else 0 for _ in range(cols)] for _ in range(rows)]
-
-    def __mul__(self, other):
-        if self.columns != other.rows:
-            raise ValueError("Incompatible matrix dimensions for multiplication")
-        result = Matrix(self.rows, other.columns, randomize=False)
-        for i in range(self.rows):
-            for j in range(other.columns):
-                result.value[i][j] = sum(self.value[i][k] * other.value[k][j] for k in range(self.columns))
-        return result
-
-    def __add__(self, other):
-        if self.rows != other.rows or self.columns != other.columns:
-            raise ValueError("Incompatible matrix dimensions for addition")
-        result = Matrix(self.rows, self.columns, randomize=False)
-        for i in range(self.rows):
-            for j in range(self.columns):
-                result.value[i][j] = self.value[i][j] + other.value[i][j]
-        return result
-
-    def to_list(self):
-        return self.value[0] if self.rows == 1 else self.value
-
-def sigmoid(x): return 1 / (1 + math.exp(-x))
-def relu(x): return max(0, x)
-def tanh(x): return math.tanh(x)
+def sigmoid(x): return 1 / (1 + np.exp(-x))
+def relu(x): return np.maximum(0, x)
+def tanh(x): return np.tanh(x)
 
 def get_fun(name):
     funcs = {'sigmoid': sigmoid, 'relu': relu, 'tanh': tanh}
@@ -41,18 +11,11 @@ def get_fun(name):
     except KeyError:
         raise ValueError(f"Unknown activation '{name}'. Valid: {list(funcs.keys())}")
 
-def fun_on_matrix(f, m):
-    result = Matrix(m.rows, m.columns, randomize=False)
-    for i in range(m.rows):
-        for j in range(m.columns):
-            result.value[i][j] = f(m.value[i][j])
-    return result
-
 def get_random_ws(nodes):
-    return [Matrix(nodes[i], nodes[i+1]) for i in range(len(nodes)-1)]
+    return [np.random.uniform(-1, 1, (nodes[i], nodes[i + 1])) for i in range(len(nodes) - 1)]
 
 def get_random_bs(nodes):
-    return [Matrix(1, nodes[i+1]) for i in range(len(nodes)-1)]
+    return [np.zeros((1, nodes[i+1])) for i in range(len(nodes)-1)]
 
 class ANN:
     def __init__(self, num_layers, nodes, functions):
@@ -65,15 +28,33 @@ class ANN:
     def feedforward(self, start):
         if len(start) != self.nodes[0]:
             raise ValueError("Input size mismatch")
-        cur = Matrix(1, self.nodes[0], randomize=False)
-        cur.value[0] = start
+        cur = np.array(start).reshape(1, -1)
         for i in range(1, self.num_layers):
             cur = self.get_next(cur, i)
-        return cur.to_list()
+        return cur
 
     def get_next(self, x, i):
         w, b, f = self.ws[i-1], self.bs[i-1], self.functions[i-1]
-        return fun_on_matrix(f, x * w + b)
+        return f(np.dot(x, w) + b)
+    
+    def set_weights_bias(self, flat_params):
+        idx = 0
+        for i in range(len(self.ws)):
+            ws_shape = self.ws[i].shape
+            bs_shape = self.bs[i].shape
+
+            self.ws[i] = flat_params[idx:idx + np.prod(ws_shape)].reshape(ws_shape)
+            idx += np.prod(ws_shape)
+    
+            self.bs[i] = flat_params[idx:idx + np.prod(bs_shape)].reshape(bs_shape)
+            idx += np.prod(bs_shape)
+
+        if idx < len(flat_params):
+            func_codes = flat_params[idx:]
+            self.functions = [
+                get_fun(['sigmoid', 'relu', 'tanh'][int(np.clip(round(c), 0, 2))])
+                for c in func_codes
+                ]
 
     def check_validity(self, num_layers, nodes, functions):
         if num_layers < 2:
