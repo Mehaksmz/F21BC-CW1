@@ -1,6 +1,8 @@
 import numpy as np
 
-def sigmoid(x): return 1 / (1 + np.exp(-x))
+def sigmoid(x): 
+     x_clipped = np.clip(x, -500, 500)
+     return 1 / (1 + np.exp(-x_clipped))
 def relu(x): return np.maximum(0, x)
 def tanh(x): return np.tanh(x)
 
@@ -26,11 +28,26 @@ class ANN:
         self.check_validity(num_layers, nodes, functions)
 
     def feedforward(self, start):
-        if len(start) != self.nodes[0]:
-            raise ValueError("Input size mismatch")
-        cur = np.array(start).reshape(1, -1)
+        start = np.array(start)
+
+        if start.ndim == 1:
+            if start.shape[0] != self.nodes[0]:
+                raise ValueError("Input size mismatch")
+            cur = start.reshape(1, -1)
+
+        
+        elif start.ndim == 2:
+            if start.shape[1] != self.nodes[0]:
+                raise ValueError("Batch input dimension mismatch")
+            cur = start
+
+        else:
+            raise ValueError("Input must be 1D or 2D")
+
+        # Forward pass
         for i in range(1, self.num_layers):
             cur = self.get_next(cur, i)
+
         return cur
 
     def get_next(self, x, i):
@@ -63,7 +80,3 @@ class ANN:
             raise ValueError("Nodes list must match number of layers")
         if len(functions) != num_layers - 1:
             raise ValueError("Functions list must be one less than layers")
-
-ann = ANN(3, [2, 4, 1], ['relu', 'sigmoid'])
-output = ann.feedforward([0.5, -0.2])
-print(output)
