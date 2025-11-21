@@ -1,4 +1,4 @@
-# F21BC-CW1 – ANN + PSO Concrete Strength Modelling
+# F21BC-CW1 - ANN + PSO Concrete Strength Modelling
 
 This project trains feedforward Artificial Neural Networks (ANNs) to predict concrete compressive strength. Particle Swarm Optimization (PSO) is used to tune network weights, biases, and activation functions. The repository contains scripts for training a single model, running hyper-parameter sweeps, and plotting the resulting metrics.
 
@@ -18,7 +18,7 @@ This project trains feedforward Artificial Neural Networks (ANNs) to predict con
 └── README.md
 ```
 
-- `data/`: Raw dataset (expects the CSV to stay in this folder).
+- `data/`: Raw dataset.
 - `scripts/ANN.py`: Handles network initialisation, feedforward passes, and parameter reshaping for PSO.
 - `scripts/PSO.py`: Implements particles, velocity updates, and the optimisation loop. Inline comments map directly to pseudocode line numbers from the report.
 - `scripts/regression.py`: Loads data, runs ANN with PSO, and reports MAE/MSE/RMSE on the test split.
@@ -62,7 +62,7 @@ pip install numpy pandas scikit-learn matplotlib seaborn
    Results are written to `experiment_results.csv` in the project root.
 
 4. **Plot results**  
-   Generate bar charts and heatmaps using the saved CSV.
+   Generates bar charts and heatmaps using the saved CSV.
    ```bash
    cd scripts
    python results_plot.py
