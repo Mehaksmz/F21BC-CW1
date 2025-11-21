@@ -5,16 +5,20 @@ from sklearn.preprocessing import StandardScaler
 from ANN import ANN
 from PSO import PSO
 
-
 def load_concrete_data(path):
+    # Read the CSV file containing the concrete dataset
     df = pd.read_csv(path)
+    
+    # Separate features and target
     X = df.iloc[:, :-1].values
     y = df.iloc[:, -1].values.reshape(-1, 1)
 
+    # Split the data into train/test sets (70/30 split)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.30, random_state=42
     )
 
+    # Standardize features
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
@@ -25,27 +29,19 @@ def load_concrete_data(path):
 def train_ann_with_pso():
     X_train, X_test, y_train, y_test = load_concrete_data("data/concrete_data.csv")
 
+    # Intialize network dimensions
     input_size = X_train.shape[1]  
     hidden_size = 10             
     output_size = y_train.shape[1]  
 
     nodes = [input_size, hidden_size, output_size]
-    functions = ["relu", "sigmoid"]
+    functions = ["relu", "linear"]
     num_layers = len(nodes)
 
+    # Initialize ANN with weights/biases/activations
     ann = ANN(num_layers, nodes, functions)
 
-    y_train_pred_initial = ann.feedforward(X_train)
-    initial_mae = np.mean(np.abs(y_train_pred_initial - y_train))
-    initial_mse = np.mean((y_train_pred_initial - y_train) ** 2)
-    initial_rmse = np.sqrt(initial_mse)
-    
-    print("Before Training (Initial Random Weights):")
-    print(f"Initial MAE: {initial_mae:.4f}")
-    print(f"Initial MSE: {initial_mse:.4f}")
-    print(f"Initial RMSE: {initial_rmse:.4f}\n")
-
-  
+    # Compute dimensionality for the PSO (weights + biases + activations)
     weight_count = sum(nodes[i] * nodes[i+1] for i in range(len(nodes)-1))
     bias_count = sum(nodes[i+1] for i in range(len(nodes)-1))
     num_functions = len(nodes) - 1
@@ -60,31 +56,22 @@ def train_ann_with_pso():
         delta=0.4,
         epsilon=0.8,
         num_dimensions=dimensions,
-        obj_func=None,
         max_iter=50,
         num_informants=5
     )
 
+    # Run PSO to optimize ANN parameters
     print("Training PSO...")
     best_position, best_fitness = pso.move_particle(ann, X_train, y_train)
 
+    # Report training results
     print("\nTraining complete.")
     print("Best Training MAE:", best_fitness)
 
     ann.set_weights_bias(best_position)
+    print("Chosen activations:", [f.__name__ for f in ann.functions])
 
-
-    # y_train_pred = ann.feedforward(X_train)
-
-    # train_mae = np.mean(np.abs(y_train_pred - y_train))
-    # train_mse = np.mean((y_train_pred - y_train) ** 2)
-    # train_rmse = np.sqrt(train_mse)
-
-    # print(f"Training MAE: {train_mae:.4f}")
-    # print(f"Training MSE: {train_mse:.4f}")
-    # print(f"Training RMSE: {train_rmse:.4f}")
-
-    # Evaluate on the test set
+    # Evaluate optimized ANN on the test data
     y_test_pred = ann.feedforward(X_test)
 
     mse_test = np.mean((y_test - y_test_pred) ** 2)
